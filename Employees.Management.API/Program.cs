@@ -1,4 +1,5 @@
 using Employees.Management.API.Contexts;
+using Employees.Management.API.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +15,11 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient("PaymentAPI", httpClient =>
 {
-    httpClient.BaseAddress = new Uri(new Uri(builder.Configuration .GetValue<string>("PaymentUrl")), "/Payment");
+    httpClient.BaseAddress = new Uri(new Uri(builder.Configuration.GetValue<string>("PaymentUrl")), "/Payment");
     httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+
+builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 
 var app = builder.Build();
 
@@ -35,5 +38,7 @@ if (app.Environment.IsDevelopment())
         opt.RoutePrefix = string.Empty;
     });
 }
+
+app.MigrateDb();
 
 app.Run();

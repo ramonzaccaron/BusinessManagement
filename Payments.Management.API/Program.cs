@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Payments.Management.API.Contexts;
+using Payments.Management.API.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddControllers();
 
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 
 var app = builder.Build();
 
@@ -29,5 +32,7 @@ if (app.Environment.IsDevelopment())
         opt.RoutePrefix = string.Empty;
     });
 }
+
+app.MigrateDb();
 
 app.Run();
