@@ -10,12 +10,20 @@ processors:
    send_batch_size: 1024
    timeout: 5s
 exporters:
- jaeger:
-   endpoint: jaeger-all-in-one:14250
-   insecure: true
+# Jaeger extension is incompatible with the OpenTelemetry Protocol, using the OTLP extension instead
+ otlp/jaeger:
+   endpoint: jaeger:4317
+   tls:
+    insecure: true
+ prometheus:
+   endpoint: "0.0.0.0:8889"
 service:
  pipelines:
    traces:
      receivers: [otlp]
      processors: [batch]
-     exporters: [jaeger]
+     exporters: [otlp/jaeger]
+   metrics:
+     receivers: [otlp]
+     processors: [batch]
+     exporters: [prometheus]
