@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
  # Jaeger
  jaeger:
    container_name: jaeger-tracing
@@ -13,9 +14,33 @@ services:
     container_name: prometheus-metrics
     image: prom/prometheus
     volumes:
-      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
+
+ # Grafana Loki
+ loki:
+    container_name: loki-logs
+    image: grafana/loki:3.0.0
+    volumes:
+      - ./loki-config.yaml:/conf/loki-config.yaml
+    command: [ "--config.file=/conf/loki-config.yaml" ]
+    ports:
+      - 3100:3100
+
+ # Grafana
+ grafana:
+    container_name: grafana
+    image: grafana/grafana:main-ubuntu
+    user: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
 
  # Collector
  collector:

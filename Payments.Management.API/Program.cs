@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Payments.Management.API.Contexts;
 using Payments.Management.API.Extensions;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,11 @@ builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddCustomOpenTelemetry(builder.Configuration);
+
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
 
 var app = builder.Build();
 
