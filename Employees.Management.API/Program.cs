@@ -1,6 +1,7 @@
 using Employees.Management.API.Contexts;
 using Employees.Management.API.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,11 @@ builder.Services.AddHttpClient("PaymentAPI", httpClient =>
 });
 
 builder.Services.AddCustomOpenTelemetry(builder.Configuration);
+
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
 
 var app = builder.Build();
 
