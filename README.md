@@ -3,4 +3,4 @@
 
 Modelo de Telemetria atual
 
-![Arquitetura do projeto e Observabilidade](https://github.com/user-attachments/assets/bcc8e0a0-59bf-4785-97fb-3f01be562aa5)
+![Arquitetura do projeto e Observabilidade](https://github.com/user-attachments/assets/fecbcd35-9324-4888-811b-b50d49b90e24)
