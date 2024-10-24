@@ -1,6 +1,9 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Payments.Management.API.Consumers;
 using Payments.Management.API.Contexts;
 using Payments.Management.API.Extensions;
+using Payments.Management.API.Infra;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +22,24 @@ builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
     loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<PaymentMessagingService>();
+
+    x.UsingRabbitMq((context, config) =>
+    {
+        config.Host(new Uri(RabbitMqConsts.RabbitMqRootUri), h =>
+        {
+            h.Username(RabbitMqConsts.UserName);
+            h.Password(RabbitMqConsts.Password);
+        });
+        config.ReceiveEndpoint("payment", e =>
+        {
+            e.Consumer<PaymentMessagingService>(context);
+        });
+    });
 });
 
 var app = builder.Build();

@@ -29,6 +29,142 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-202957",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "messaging_masstransit_consume_active_ea_total{messaging_masstransit_destination=\"payment\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Fila Pagamento - Em processamento",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-202957",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "messaging_masstransit_consume_ea_total{messaging_masstransit_destination=\"payment\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Fila Pagamento - Processado",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -91,7 +227,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 5,
       "options": {
@@ -106,6 +242,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -211,7 +348,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 8
       },
       "id": 6,
       "options": {
@@ -226,6 +363,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -273,7 +411,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 7
+        "y": 15
       },
       "id": 3,
       "options": {
@@ -291,7 +429,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.2.0-187035",
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -346,7 +484,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 7
+        "y": 15
       },
       "id": 2,
       "options": {
@@ -364,7 +502,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.2.0-187035",
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -425,7 +563,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 23
       },
       "id": 1,
       "options": {
@@ -440,7 +578,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "11.2.0-187035",
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -461,11 +599,15 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "id": 4,
       "options": {
@@ -478,7 +620,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "11.2.0-187035",
+      "pluginVersion": "11.4.0-202957",
       "targets": [
         {
           "datasource": {
@@ -495,20 +637,21 @@
       "type": "logs"
     }
   ],
+  "preload": false,
   "refresh": "5s",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "cdtyoev4bwv0gc",
-  "version": 11,
+  "version": 8,
   "weekStart": ""
 }
