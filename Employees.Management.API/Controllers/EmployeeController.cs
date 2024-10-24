@@ -1,8 +1,11 @@
-﻿using Employees.Management.API.Commands;
+﻿using Business.Management.Contracts;
+using Employees.Management.API.Commands;
 using Employees.Management.API.Contexts;
 using Employees.Management.API.Domain;
+using Employees.Management.API.Infra;
 using Employees.Management.API.Meters;
 using Employees.Management.API.Queries;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -16,12 +19,14 @@ namespace Employees.Management.API.Controllers
         private readonly IHttpClientFactory _clientFactory;
         private readonly AppDbContext _dbContext;
         private readonly ILogger<EmployeeController> _logger;
+        readonly IBus _bus;
 
-        public EmployeeController(IHttpClientFactory clientFactory, AppDbContext dbContext, ILogger<EmployeeController> logger)
+        public EmployeeController(IHttpClientFactory clientFactory, AppDbContext dbContext, ILogger<EmployeeController> logger, IBus bus)
         {
             _clientFactory = clientFactory;
             _dbContext = dbContext;
             _logger = logger;
+            _bus = bus;
         }
 
         [HttpGet]
@@ -47,7 +52,7 @@ namespace Employees.Management.API.Controllers
         }
 
         [HttpPost]
-        public ActionResult AddEmployee(AddEmployeeCommand command)
+        public async Task<ActionResult> AddEmployee(AddEmployeeCommand command)
         {
             _logger.LogInformation("Iniciando processo de registro de funcionário.");
 
@@ -74,7 +79,25 @@ namespace Employees.Management.API.Controllers
                 Role = command.Role
             };
 
-            _logger.LogInformation("Iniciando processo de envio de Funcionário para Pagamento");
+            // Para testar o monitoramento tanto de requisições HTTP quanto via Mensageria
+            // será enviado para a API de pagamento o cadastro de um novo funcionário das duas formas.
+
+            _logger.LogInformation("Iniciando processo de envio de Funcionário para Pagamento via mensageria.");
+
+            var newEvent = new EmployeeAddedEvent()
+            {
+                EmployeeId = employee.Id,
+                Role = employee.Role
+            };
+
+            var url = new Uri(RabbitMqConsts.RabbitMqUri);
+
+            var endpoint = await _bus.GetSendEndpoint(url);
+            await endpoint.Send(newEvent);
+
+            _logger.LogInformation("Finalizando processo de envio de Funcionário para Pagamento via mensageria.");
+
+            _logger.LogInformation("Iniciando processo de envio de Funcionário para Pagamento.");
 
             using (var client = _clientFactory.CreateClient("PaymentAPI"))
             {
@@ -92,10 +115,10 @@ namespace Employees.Management.API.Controllers
                 EmployeeMetrics.NewEmployeePaymentHistogram.Record(stopwatch.ElapsedMilliseconds,
                     tag: KeyValuePair.Create<string, object?>("Host", client.BaseAddress));
 
-                response.Content.ReadAsStringAsync();
-            }            
+                await response.Content.ReadAsStringAsync();
+            }
 
-            _logger.LogInformation("Finalizando processo de envio de Funcionário para Pagamento");
+            _logger.LogInformation("Finalizando processo de envio de Funcionário para Pagamento.");
 
             _logger.LogInformation("Finalizando processo de registro de funcionário.");
 

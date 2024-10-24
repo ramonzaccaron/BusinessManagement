@@ -1,4 +1,6 @@
-﻿using Npgsql;
+﻿using MassTransit.Logging;
+using MassTransit.Monitoring;
+using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -16,7 +18,7 @@ namespace Payments.Management.API.Extensions
             var otelExporterEndpoint = configuration.GetSection("OpenTelemetrySettings").GetChildren().FirstOrDefault(c => c.Key == "OtlExporterEndpoint").Value;
 
             services.AddOpenTelemetry()
-                .ConfigureResource(resource => resource.AddService(serviceName))
+                .ConfigureResource(resource => resource.AddService(serviceName, string.Empty, "1.0", true, Environment.MachineName))
                 .UseOtlpExporter(OtlpExportProtocol.Grpc, new Uri(otelExporterEndpoint))
                 .WithTracing(builder =>
                 {
@@ -24,7 +26,8 @@ namespace Payments.Management.API.Extensions
                         .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddEntityFrameworkCoreInstrumentation(x => x.SetDbStatementForText = true)
-                        .AddNpgsql();
+                        .AddNpgsql()
+                        .AddSource(DiagnosticHeaders.DefaultListenerName); // MassTransit ActivitySource
                 })
                 .WithMetrics(builder =>
                 {
@@ -33,7 +36,8 @@ namespace Payments.Management.API.Extensions
                         .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddRuntimeInstrumentation()
-                        .AddProcessInstrumentation();
+                        .AddProcessInstrumentation()
+                        .AddMeter(InstrumentationOptions.MeterName); // MassTransit Meter
                 });
         }
     }

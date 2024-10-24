@@ -1,5 +1,7 @@
 using Employees.Management.API.Contexts;
 using Employees.Management.API.Extensions;
+using Employees.Management.API.Infra;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -25,6 +27,18 @@ builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
     loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((cfg, context) =>
+    {
+        context.Host(new Uri(RabbitMqConsts.RabbitMqRootUri), h =>
+        {
+            h.Username(RabbitMqConsts.UserName);
+            h.Password(RabbitMqConsts.Password);
+        });
+    });
 });
 
 var app = builder.Build();
