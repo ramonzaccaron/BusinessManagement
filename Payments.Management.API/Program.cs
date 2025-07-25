@@ -5,6 +5,7 @@ using Payments.Management.API.Contexts;
 using Payments.Management.API.Extensions;
 using Payments.Management.API.Infra;
 using Serilog;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +17,6 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddControllers();
 
 builder.Services.AddSwaggerGen();
-
-builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
@@ -41,6 +40,13 @@ builder.Services.AddMassTransit(x =>
         });
     });
 });
+
+IConnectionMultiplexer redisConnectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(RedisConsts.RedisRootUri);
+
+builder.Services.AddSingleton(redisConnectionMultiplexer);
+builder.Services.AddStackExchangeRedisCache(options => options.ConnectionMultiplexerFactory = () => Task.FromResult(redisConnectionMultiplexer));
+
+builder.Services.AddCustomOpenTelemetry(builder.Configuration, redisConnectionMultiplexer);
 
 var app = builder.Build();
 

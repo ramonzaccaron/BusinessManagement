@@ -4,6 +4,7 @@ using Employees.Management.API.Infra;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,8 +23,6 @@ builder.Services.AddHttpClient("PaymentAPI", httpClient =>
     httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-builder.Services.AddCustomOpenTelemetry(builder.Configuration);
-
 builder.Host.UseSerilog((context, loggerConfiguration) =>
 {
     loggerConfiguration.ReadFrom.Configuration(context.Configuration);
@@ -40,6 +39,13 @@ builder.Services.AddMassTransit(x =>
         });
     });
 });
+
+IConnectionMultiplexer redisConnectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(RedisConsts.RedisRootUri);
+
+builder.Services.AddSingleton(redisConnectionMultiplexer);
+builder.Services.AddStackExchangeRedisCache(options => options.ConnectionMultiplexerFactory = () => Task.FromResult(redisConnectionMultiplexer));
+
+builder.Services.AddCustomOpenTelemetry(builder.Configuration, redisConnectionMultiplexer);
 
 var app = builder.Build();
 

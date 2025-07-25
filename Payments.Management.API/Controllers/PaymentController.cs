@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 using Payments.Management.API.Commands;
 using Payments.Management.API.Contexts;
 using Payments.Management.API.Domain;
 using Payments.Management.API.Meters;
 using Payments.Management.API.Queries;
+using System.Text;
 
 namespace Payments.Management.API.Controllers
 {
@@ -13,11 +16,13 @@ namespace Payments.Management.API.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<PaymentController> _logger;
+        private readonly IDistributedCache _distributedCache;
 
-        public PaymentController(AppDbContext dbContext, ILogger<PaymentController> logger)
+        public PaymentController(AppDbContext dbContext, ILogger<PaymentController> logger, IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _logger = logger;
+            _distributedCache = distributedCache;
         }
 
         [HttpGet]
@@ -30,7 +35,22 @@ namespace Payments.Management.API.Controllers
                 new("Action", nameof(GetPayments)),
                 new("Controller", nameof(PaymentController)));
 
-            return _dbContext.Payments.Select(e =>
+
+            var payments = _distributedCache.GetAsync("Payment");
+
+            if (payments.Result != null)
+            {
+                _logger.LogInformation("Dados encontrados em cache, retornando dados do Redis.");
+
+                var cachedDataString = Encoding.UTF8.GetString(payments.Result);
+                var paymentList = JsonConvert.DeserializeObject<List<PaymentListQuery>>(cachedDataString);
+
+                return paymentList;
+            }
+
+            _logger.LogInformation("Dados não encontrados em cache, buscando dados do Banco.");
+
+            var dbPayments = _dbContext.Payments.Select(e =>
                 new PaymentListQuery()
                 {
                     Id = e.Id,
@@ -39,6 +59,15 @@ namespace Payments.Management.API.Controllers
                     Salary = e.Salary,
                 }
             ).ToList();
+
+            _logger.LogInformation("Inserindo dados em cache para próximas consultas.");
+
+            string serializedPaymentList = JsonConvert.SerializeObject(dbPayments);
+            _distributedCache.SetAsync("Payment", Encoding.UTF8.GetBytes(serializedPaymentList));
+
+            _logger.LogInformation("Retornando dados do Banco.");
+
+            return dbPayments;
         }
 
         [HttpPost]
@@ -50,6 +79,9 @@ namespace Payments.Management.API.Controllers
 
             _dbContext.Payments.Add(payment);
             _dbContext.SaveChanges();
+
+            _logger.LogInformation("Removendo dados de cache para a próxima consulta buscar do bando e atualizar o Redis.");
+            _distributedCache.RemoveAsync("Payment");
 
             //Utilização de métrica customizada - Counter
             PaymentMetrics.NewPaymentCounter.Add(1,
