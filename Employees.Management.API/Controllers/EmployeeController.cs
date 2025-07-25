@@ -7,8 +7,10 @@ using Employees.Management.API.Meters;
 using Employees.Management.API.Queries;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Text;
 
 namespace Employees.Management.API.Controllers
 {
@@ -20,13 +22,15 @@ namespace Employees.Management.API.Controllers
         private readonly AppDbContext _dbContext;
         private readonly ILogger<EmployeeController> _logger;
         readonly IBus _bus;
+        private readonly IDistributedCache _distributedCache;
 
-        public EmployeeController(IHttpClientFactory clientFactory, AppDbContext dbContext, ILogger<EmployeeController> logger, IBus bus)
+        public EmployeeController(IHttpClientFactory clientFactory, AppDbContext dbContext, ILogger<EmployeeController> logger, IBus bus, IDistributedCache distributedCache)
         {
             _clientFactory = clientFactory;
             _dbContext = dbContext;
             _logger = logger;
             _bus = bus;
+            _distributedCache = distributedCache;
         }
 
         [HttpGet]
@@ -39,7 +43,22 @@ namespace Employees.Management.API.Controllers
                 new("Action", nameof(GetEmployees)),
                 new("Controller", nameof(EmployeeController)));
 
-            return _dbContext.Employees.Select(e =>
+
+            var employees = _distributedCache.GetAsync("Employee");
+
+            if (employees.Result != null)
+            {
+                _logger.LogInformation("Dados encontrados em cache, retornando dados do Redis.");
+
+                var cachedDataString = Encoding.UTF8.GetString(employees.Result);
+                var employeeList = JsonConvert.DeserializeObject<List<EmployeeListQuery>>(cachedDataString);
+
+                return employeeList;
+            }
+
+            _logger.LogInformation("Dados não encontrados em cache, buscando dados do Banco.");
+
+            var dbEmployees = _dbContext.Employees.Select(e =>
                 new EmployeeListQuery()
                 {
                     Id = e.Id,
@@ -49,6 +68,15 @@ namespace Employees.Management.API.Controllers
                     Role = e.Role,
                 }
             ).ToList();
+
+            _logger.LogInformation("Inserindo dados em cache para próximas consultas.");
+
+            string serializedEmployeeList = JsonConvert.SerializeObject(dbEmployees);
+            _distributedCache.SetAsync("Employee", Encoding.UTF8.GetBytes(serializedEmployeeList));
+
+            _logger.LogInformation("Retornando dados do Banco.");
+
+            return dbEmployees;
         }
 
         [HttpPost]
@@ -66,6 +94,9 @@ namespace Employees.Management.API.Controllers
 
             _dbContext.Employees.Add(employee);
             _dbContext.SaveChanges();
+
+            _logger.LogInformation("Removendo dados de cache para a próxima consulta buscar do bando e atualizar o Redis.");
+            await _distributedCache.RemoveAsync("Employee");
 
             //Utilização de métrica customizada - Counter
             EmployeeMetrics.NewEmployeesCounter.Add(1,

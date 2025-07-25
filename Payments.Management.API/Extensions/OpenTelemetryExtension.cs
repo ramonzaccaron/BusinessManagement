@@ -7,12 +7,13 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Payments.Management.API.Meters;
+using StackExchange.Redis;
 
 namespace Payments.Management.API.Extensions
 {
     public static class OpenTelemetryExtension
     {
-        public static void AddCustomOpenTelemetry(this IServiceCollection services, ConfigurationManager configuration)
+        public static void AddCustomOpenTelemetry(this IServiceCollection services, ConfigurationManager configuration, IConnectionMultiplexer connection)
         {
             var serviceName = configuration.GetSection("OpenTelemetrySettings").GetChildren().FirstOrDefault(c => c.Key == "ServiceName").Value;
             var otelExporterEndpoint = configuration.GetSection("OpenTelemetrySettings").GetChildren().FirstOrDefault(c => c.Key == "OtlExporterEndpoint").Value;
@@ -27,7 +28,8 @@ namespace Payments.Management.API.Extensions
                         .AddHttpClientInstrumentation()
                         .AddEntityFrameworkCoreInstrumentation(x => x.SetDbStatementForText = true)
                         .AddNpgsql()
-                        .AddSource(DiagnosticHeaders.DefaultListenerName); // MassTransit ActivitySource
+                        .AddSource(DiagnosticHeaders.DefaultListenerName) // MassTransit ActivitySource
+                        .AddRedisInstrumentation(connection, opt => opt.FlushInterval = TimeSpan.FromSeconds(1));
                 })
                 .WithMetrics(builder =>
                 {
