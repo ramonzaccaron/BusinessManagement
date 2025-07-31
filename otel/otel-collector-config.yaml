@@ -1,39 +1,49 @@
 receivers:
- otlp:
-   protocols:
-     http:
-       endpoint: 0.0.0.0:4318
-     grpc:
-       endpoint: 0.0.0.0:4317
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
 processors:
- batch:
-   send_batch_size: 1024
-   timeout: 5s
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+
 exporters:
 # Jaeger extension is incompatible with the OpenTelemetry Protocol, using the OTLP extension instead
- otlp/jaeger:
-   endpoint: jaeger:4317
-   tls:
-    insecure: true
-#  Prometheus
- prometheus:
-   endpoint: "0.0.0.0:8889"
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
 
-# Grafana Loki
- otlphttp:
-   endpoint: http://loki:3100/otlp
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+ #  Prometheus
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+ # Grafana Loki
+  otlphttp:
+    endpoint: http://loki:3100/otlp
 
 service:
- pipelines:
-   traces:
-     receivers: [otlp]
-     processors: [batch]
-     exporters: [otlp/jaeger]
-   metrics:
-     receivers: [otlp]
-     processors: [batch]
-     exporters: [prometheus]
-   logs:
-     receivers: [otlp]
-     processors: [batch]
-     exporters: [otlphttp]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, otlp/tempo]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]

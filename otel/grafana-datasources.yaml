@@ -44,3 +44,16 @@ datasources:
     editable: false
     jsonData:
       tlsSkipVerify: true
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    orgId: 1
+    url: http://tempo:3200
+    uid: tempo
+    isDefault: false
+    version: 1
+    editable: true
+    tracing:
+      nodeGraph:
+        enabled: true

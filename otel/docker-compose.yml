@@ -26,6 +26,16 @@ services:
     ports:
       - 3100:3100
 
+  # Grafana Tempo
+ tempo:
+    container_name: tempo-tracing
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200" # Tempo HTTP
+
  # Grafana
  grafana:
     container_name: grafana
@@ -45,7 +55,7 @@ services:
  # Collector
  collector:
    container_name: otel-collector
-   image: otel/opentelemetry-collector
+   image: otel/opentelemetry-collector-contrib
    volumes:
      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
    command: [ "--config=/etc/otel-collector-config.yaml" ]
